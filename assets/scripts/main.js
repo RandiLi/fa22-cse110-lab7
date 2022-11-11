@@ -33,6 +33,20 @@ async function init() {
  * of installing it and getting it running
  */
 function initializeServiceWorker() {
+  if('serviceWorker' in navigator) {                      // Check if supported
+    window.addEventListener('load', async (event) => {    // Listen for 'load'
+      try {
+        const reg =  await navigator.serviceWorker.register('./sw.js', {
+          scope: './',                                    // Register service worker
+        });
+        if(reg.active) {
+          console.log('Registration successful');         // Log if successful
+        }
+      } catch (error) {                                   // Log if error
+        console.error(`Registration failed with ${error}`);
+      }
+    });
+  }
   // EXPLORE - START (All explore numbers start with B)
   /*******************/
   // ServiceWorkers have many uses, the most common of which is to manage
@@ -65,6 +79,27 @@ function initializeServiceWorker() {
  * @returns {Array<Object>} An array of recipes found in localStorage
  */
 async function getRecipes() {
+  let recipes = localStorage.getItem('recipes');  // Check and return
+  if(recipes) return JSON.parse(recipes);         
+
+  recipes = [];                                   // Empty recipes to hold new data
+  
+  return new Promise((resolve, reject) => {       // Return new promise
+    RECIPE_URLS.forEach(async element => {        // Loop through RECIPE_URLS
+      try {                                       // Try/catch block
+        let recipe = await fetch(element);        // Fetch URL
+        recipe = await recipe.json();             // Retrieve JSON
+        recipes.push(recipe);                     // Add to recipes
+        if(recipes.length==RECIPE_URLS.length) {  // Check if done fetching
+          saveRecipesToStorage(recipes);
+          resolve(recipes);
+        }
+      } catch (error) {
+        console.error(error);                     // Log error
+        reject(error);                            // Reject
+      }
+    });
+  });
   // EXPOSE - START (All expose numbers start with A)
   // A1. TODO - Check local storage to see if there are any recipes.
   //            If there are recipes, return them.
